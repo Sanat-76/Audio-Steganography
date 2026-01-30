@@ -2,7 +2,8 @@ import sys
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTextEdit, QLabel, QFileDialog, QMessageBox, QFrame)
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from scipy.io import wavfile
 from steganography import FFTSteganography
 
@@ -12,6 +13,7 @@ class MainWindow(QMainWindow):
         self.stego_engine = FFTSteganography()
         self.loaded_audio_path = None
         self.stego_audio_path = None
+        self.player = QMediaPlayer()
         
         self.initUI()
 
@@ -23,13 +25,26 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout()
 
-        # Audio Info Section
+        # Loaded Audio Section
         info_frame = QFrame()
-        info_frame.setFrameShape(QFrame.StyledPanel)
         info_layout = QVBoxLayout(info_frame)
         self.info_label = QLabel("No audio file loaded.")
         self.info_label.setAlignment(Qt.AlignCenter)
         info_layout.addWidget(self.info_label)
+        
+        # Playback Controls Overlay-style
+        controls_layout = QHBoxLayout()
+        self.load_btn = QPushButton("Load Audio")
+        self.load_btn.clicked.connect(self.load_audio)
+        controls_layout.addWidget(self.load_btn)
+
+        self.play_load_btn = QPushButton("▶")
+        self.play_load_btn.setObjectName("PlayBtn")
+        self.play_load_btn.clicked.connect(lambda: self.toggle_play(self.loaded_audio_path, self.play_load_btn))
+        self.play_load_btn.setEnabled(False)
+        controls_layout.addWidget(self.play_load_btn)
+        
+        info_layout.addLayout(controls_layout)
         layout.addWidget(info_frame)
 
         # Message Section
@@ -38,30 +53,41 @@ class MainWindow(QMainWindow):
         self.message_input.setPlaceholderText("Enter message to embed or view extracted message here...")
         layout.addWidget(self.message_input)
 
-        # Buttons Section
-        btn_layout = QHBoxLayout()
-        self.load_btn = QPushButton("Load Audio")
-        self.load_btn.clicked.connect(self.load_audio)
-        btn_layout.addWidget(self.load_btn)
-
+        # Action Buttons (Embed/Extract)
+        action_frame = QFrame()
+        action_layout = QHBoxLayout(action_frame)
+        
         self.embed_btn = QPushButton("Embed Message")
         self.embed_btn.clicked.connect(self.embed_message)
-        btn_layout.addWidget(self.embed_btn)
+        action_layout.addWidget(self.embed_btn)
         
-        self.save_btn = QPushButton("Save Stego Audio")
-        self.save_btn.clicked.connect(self.save_stego)
-        btn_layout.addWidget(self.save_btn)
-        layout.addLayout(btn_layout)
-
-        btn_layout_2 = QHBoxLayout()
-        self.load_stego_btn = QPushButton("Load Stego Audio")
+        self.load_stego_btn = QPushButton("Load Stego")
         self.load_stego_btn.clicked.connect(self.load_stego)
-        btn_layout_2.addWidget(self.load_stego_btn)
+        action_layout.addWidget(self.load_stego_btn)
 
         self.extract_btn = QPushButton("Extract Message")
         self.extract_btn.clicked.connect(self.extract_message)
-        btn_layout_2.addWidget(self.extract_btn)
-        layout.addLayout(btn_layout_2)
+        action_layout.addWidget(self.extract_btn)
+        layout.addWidget(action_frame)
+
+        # Stego Playback Section (Sticky Bottom)
+        self.stego_playback_frame = QFrame()
+        stego_layout = QHBoxLayout(self.stego_playback_frame)
+        stego_layout.addWidget(QLabel("Stego Audio:"))
+        
+        self.play_stego_btn = QPushButton("▶")
+        self.play_stego_btn.setObjectName("PlayBtn")
+        self.play_stego_btn.clicked.connect(lambda: self.toggle_play(self.stego_audio_path, self.play_stego_btn))
+        self.play_stego_btn.setEnabled(False)
+        stego_layout.addWidget(self.play_stego_btn)
+        
+        self.stego_name_label = QLabel("None")
+        stego_layout.addWidget(self.stego_name_label)
+        layout.addWidget(self.stego_playback_frame)
+
+        # Connect player state change
+        self.player.stateChanged.connect(self.on_state_changed)
+        self.active_play_btn = None
 
         # Status Bar
         self.statusBar().showMessage("Ready")
@@ -73,7 +99,38 @@ class MainWindow(QMainWindow):
         if path:
             self.loaded_audio_path = path
             self.update_audio_info(path)
+            self.play_load_btn.setEnabled(True)
             self.statusBar().showMessage(f"Loaded: {os.path.basename(path)}")
+
+    def play_audio(self, path, btn):
+        if path and os.path.exists(path):
+            # If playing the same file, just pause/resume
+            if self.player.mediaStatus() != QMediaPlayer.NoMedia and self.active_play_btn == btn:
+                if self.player.state() == QMediaPlayer.PlayingState:
+                    self.player.pause()
+                else:
+                    self.player.play()
+                return
+
+            # Otherwise, load new file
+            self.active_play_btn = btn
+            url = QUrl.fromLocalFile(os.path.abspath(path))
+            content = QMediaContent(url)
+            self.player.setMedia(content)
+            self.player.play()
+            self.statusBar().showMessage(f"Playing: {os.path.basename(path)}")
+        else:
+            QMessageBox.warning(self, "Error", "Audio file not found.")
+
+    def toggle_play(self, path, btn):
+        self.play_audio(path, btn)
+
+    def on_state_changed(self, state):
+        if self.active_play_btn:
+            if state == QMediaPlayer.PlayingState:
+                self.active_play_btn.setText("⏸")
+            else:
+                self.active_play_btn.setText("▶")
 
     def update_audio_info(self, path):
         try:
@@ -107,6 +164,9 @@ class MainWindow(QMainWindow):
             save_path, _ = QFileDialog.getSaveFileName(self, "Save Stego Audio", "stego_audio.wav", "WAV Files (*.wav)")
             if save_path:
                 self.stego_engine.embed(self.loaded_audio_path, message, save_path)
+                self.stego_audio_path = save_path
+                self.stego_name_label.setText(os.path.basename(save_path))
+                self.play_stego_btn.setEnabled(True)
                 self.statusBar().showMessage("Message embedded successfully!")
                 QMessageBox.information(self, "Success", f"Stego audio saved to {save_path}")
             else:
@@ -119,7 +179,8 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Open Stego Audio File", "", "WAV Files (*.wav)")
         if path:
             self.stego_audio_path = path
-            self.update_audio_info(path)
+            self.stego_name_label.setText(os.path.basename(path))
+            self.play_stego_btn.setEnabled(True)
             self.statusBar().showMessage(f"Loaded Stego: {os.path.basename(path)}")
 
     def extract_message(self):

@@ -8,25 +8,56 @@ def main():
     # Optional: Apply some basic styling for better aesthetics
     app.setStyleSheet("""
         QMainWindow {
-            background-color: #f0f0f0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        QWidget {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        QFrame {
+            border: 1px solid #333;
+            border-radius: 10px;
+            background-color: #252525;
+            padding: 10px;
         }
         QPushButton {
             background-color: #0078d7;
             color: white;
             border-radius: 5px;
-            padding: 8px;
-            font-weight: bold;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: 500;
         }
         QPushButton:hover {
-            background-color: #005a9e;
+            background-color: #0086f1;
+        }
+        QPushButton:disabled {
+            background-color: #444;
+            color: #888;
+        }
+        QPushButton#PlayBtn {
+            font-size: 20px;
+            border-radius: 20px;
+            min-width: 40px;
+            min-height: 40px;
+            padding: 5px;
+            background-color: #28a745;
+        }
+        QPushButton#PlayBtn:hover {
+            background-color: #218838;
         }
         QLabel {
             font-size: 14px;
+            color: #aaa;
         }
         QTextEdit {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 5px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-family: 'Consolas', monospace;
         }
     """)
     
