@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+stego_audio.wav
+test_init.wav
+stego.wav
