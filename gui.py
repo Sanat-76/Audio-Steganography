@@ -35,7 +35,6 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.extract_screen)
 
         self.player.stateChanged.connect(self.on_state_changed)
-        self.statusBar().showMessage("Ready")
 
     def create_home_screen(self):
         widget = QWidget()
@@ -56,12 +55,12 @@ class MainWindow(QMainWindow):
         
         self.goto_embed_btn = QPushButton("Embed Message")
         self.goto_embed_btn.setObjectName("NavBtn")
-        self.goto_embed_btn.clicked.connect(lambda: self.stack.setCurrentWidget(self.embed_screen))
+        self.goto_embed_btn.clicked.connect(self.show_embed_screen)
         btn_layout.addWidget(self.goto_embed_btn)
 
         self.goto_extract_btn = QPushButton("Extract Message")
         self.goto_extract_btn.setObjectName("NavBtn")
-        self.goto_extract_btn.clicked.connect(lambda: self.stack.setCurrentWidget(self.extract_screen))
+        self.goto_extract_btn.clicked.connect(self.show_extract_screen)
         btn_layout.addWidget(self.goto_extract_btn)
 
         layout.addLayout(btn_layout)
@@ -160,8 +159,17 @@ class MainWindow(QMainWindow):
 
         return widget
 
+    def show_embed_screen(self):
+        self.statusBar().clearMessage()
+        self.stack.setCurrentWidget(self.embed_screen)
+
+    def show_extract_screen(self):
+        self.statusBar().clearMessage()
+        self.stack.setCurrentWidget(self.extract_screen)
+
     def go_back(self):
         self.player.stop()
+        self.statusBar().clearMessage()
         self.stack.setCurrentWidget(self.home_screen)
 
     def load_audio(self):
@@ -170,7 +178,7 @@ class MainWindow(QMainWindow):
             self.loaded_audio_path = path
             self.update_audio_info(path, self.embed_info_label)
             self.play_load_btn.setEnabled(True)
-            self.statusBar().showMessage(f"Loaded: {os.path.basename(path)}")
+            self.statusBar().showMessage(f"Loaded: {os.path.basename(path)}", 5000)
 
     def load_stego(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open Stego Audio File", "", "WAV Files (*.wav)")
@@ -178,7 +186,7 @@ class MainWindow(QMainWindow):
             self.stego_audio_path = path
             self.update_audio_info(path, self.extract_info_label)
             self.play_stego_btn.setEnabled(True)
-            self.statusBar().showMessage(f"Loaded Stego: {os.path.basename(path)}")
+            self.statusBar().showMessage(f"Loaded Stego: {os.path.basename(path)}", 5000)
 
     def update_audio_info(self, path, label):
         try:
@@ -234,7 +242,8 @@ class MainWindow(QMainWindow):
             save_path, _ = QFileDialog.getSaveFileName(self, "Save Stego Audio", "stego_audio.wav", "WAV Files (*.wav)")
             if save_path:
                 self.stego_engine.embed(self.loaded_audio_path, message, save_path)
-                self.statusBar().showMessage("Message embedded successfully!")
+                self.message_input.clear()
+                self.statusBar().showMessage("Message embedded successfully!", 5000)
                 QMessageBox.information(self, "Success", f"Stego audio saved to {save_path}")
             else:
                 self.statusBar().showMessage("Embedding cancelled.")
@@ -253,7 +262,7 @@ class MainWindow(QMainWindow):
         try:
             extracted_text = self.stego_engine.extract(self.stego_audio_path)
             self.extracted_text_display.setPlainText(extracted_text)
-            self.statusBar().showMessage("Message extracted successfully!")
+            self.statusBar().showMessage("Message extracted successfully!", 5000)
         except Exception as e:
             self.statusBar().showMessage("Extraction failed.")
             QMessageBox.critical(self, "Error", str(e))
