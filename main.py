@@ -47,6 +47,30 @@ def main():
         QPushButton#PlayBtn:hover {
             background-color: #218838;
         }
+        QPushButton#NavBtn {
+            font-size: 18px;
+            padding: 20px;
+            border-radius: 12px;
+            background-color: #0078d7;
+            min-width: 200px;
+            margin: 10px;
+        }
+        QPushButton#NavBtn:hover {
+            background-color: #0086f1;
+        }
+        QPushButton#BackBtn {
+            background-color: #444;
+            max-width: 100px;
+        }
+        QPushButton#BackBtn:hover {
+            background-color: #555;
+        }
+        QLabel#TitleLabel {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
         QLabel {
             font-size: 14px;
             color: #aaa;
