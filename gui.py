@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.extract_screen)
 
         self.player.stateChanged.connect(self.on_state_changed)
+        self.setStatusBar(None)
 
     def create_home_screen(self):
         widget = QWidget()
@@ -160,16 +161,13 @@ class MainWindow(QMainWindow):
         return widget
 
     def show_embed_screen(self):
-        self.statusBar().clearMessage()
         self.stack.setCurrentWidget(self.embed_screen)
 
     def show_extract_screen(self):
-        self.statusBar().clearMessage()
         self.stack.setCurrentWidget(self.extract_screen)
 
     def go_back(self):
         self.player.stop()
-        self.statusBar().clearMessage()
         self.stack.setCurrentWidget(self.home_screen)
 
     def load_audio(self):
@@ -178,7 +176,6 @@ class MainWindow(QMainWindow):
             self.loaded_audio_path = path
             self.update_audio_info(path, self.embed_info_label)
             self.play_load_btn.setEnabled(True)
-            self.statusBar().showMessage(f"Loaded: {os.path.basename(path)}", 5000)
 
     def load_stego(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open Stego Audio File", "", "WAV Files (*.wav)")
@@ -186,7 +183,6 @@ class MainWindow(QMainWindow):
             self.stego_audio_path = path
             self.update_audio_info(path, self.extract_info_label)
             self.play_stego_btn.setEnabled(True)
-            self.statusBar().showMessage(f"Loaded Stego: {os.path.basename(path)}", 5000)
 
     def update_audio_info(self, path, label):
         try:
@@ -235,7 +231,6 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please enter a message to embed.")
             return
 
-        self.statusBar().showMessage("Embedding message...")
         QApplication.processEvents()
 
         try:
@@ -243,10 +238,9 @@ class MainWindow(QMainWindow):
             if save_path:
                 self.stego_engine.embed(self.loaded_audio_path, message, save_path)
                 self.message_input.clear()
-                self.statusBar().showMessage("Message embedded successfully!", 5000)
                 QMessageBox.information(self, "Success", f"Stego audio saved to {save_path}")
             else:
-                self.statusBar().showMessage("Embedding cancelled.")
+                pass
         except Exception as e:
             self.statusBar().showMessage("Embedding failed.")
             QMessageBox.critical(self, "Error", str(e))
@@ -256,13 +250,11 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please load a stego audio file first.")
             return
 
-        self.statusBar().showMessage("Extracting message...")
         QApplication.processEvents()
 
         try:
             extracted_text = self.stego_engine.extract(self.stego_audio_path)
             self.extracted_text_display.setPlainText(extracted_text)
-            self.statusBar().showMessage("Message extracted successfully!", 5000)
         except Exception as e:
             self.statusBar().showMessage("Extraction failed.")
             QMessageBox.critical(self, "Error", str(e))
