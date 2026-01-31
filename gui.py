@@ -207,7 +207,6 @@ class MainWindow(QMainWindow):
             content = QMediaContent(url)
             self.player.setMedia(content)
             self.player.play()
-            self.statusBar().showMessage(f"Playing: {os.path.basename(path)}")
         else:
             QMessageBox.warning(self, "Error", "Audio file not found.")
 
@@ -242,7 +241,6 @@ class MainWindow(QMainWindow):
             else:
                 pass
         except Exception as e:
-            self.statusBar().showMessage("Embedding failed.")
             QMessageBox.critical(self, "Error", str(e))
 
     def extract_message(self):
@@ -256,7 +254,6 @@ class MainWindow(QMainWindow):
             extracted_text = self.stego_engine.extract(self.stego_audio_path)
             self.extracted_text_display.setPlainText(extracted_text)
         except Exception as e:
-            self.statusBar().showMessage("Extraction failed.")
             QMessageBox.critical(self, "Error", str(e))
 
 if __name__ == '__main__':
