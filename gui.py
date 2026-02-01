@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('FFT Audio Steganography')
+        self.setWindowTitle('Audio Steganography')
         self.setGeometry(100, 100, 700, 600)
 
         self.stack = QStackedWidget()
@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         
-        desc = QLabel("Secure your messages inside audio files using FFT technology.")
+        desc = QLabel("Secure your messages inside audio files.")
         desc.setAlignment(Qt.AlignCenter)
         desc.setStyleSheet("margin-bottom: 40px;")
         layout.addWidget(desc)
