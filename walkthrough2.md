@@ -57,6 +57,30 @@ graph TD
     M --> N["Final Secret Message"]
 ```
 
+## Presentation Slides (Concise Versions)
+
+These simplified diagrams are designed for presentation slides to highlight the core high-level logic.
+
+### Embedding (Simplified)
+```mermaid
+graph LR
+    Msg["Secret Message"] --> Bits["Bitstream"]
+    Audio["Cover Audio"] --> FFT["FFT (Frequency)"]
+    Bits --> QIM["QIM Embedding"]
+    FFT --> QIM
+    QIM --> IFFT["Inverse FFT"]
+    IFFT --> Stego["Stego Audio"]
+```
+
+### Extraction (Simplified)
+```mermaid
+graph LR
+    Stego["Stego Audio"] --> FFT["FFT (Frequency)"]
+    FFT --> QIM["QIM Detection"]
+    QIM --> Bits["Bitstream"]
+    Bits --> Msg["Secret Message"]
+```
+
 ## Key Technologies
 - **FFT (Fast Fourier Transform):** Transitions audio from time domain to frequency domain.
 - **QIM (Quantization Index Modulation):** Encodes bits by forcing frequency magnitudes to even or odd multiples of a quantization step.
