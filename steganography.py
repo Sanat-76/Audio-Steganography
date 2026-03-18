@@ -1,6 +1,55 @@
 import numpy as np
 from scipy.io import wavfile
-from scipy.fft import fft, ifft
+
+
+# ── Manual FFT / IFFT (Cooley-Tukey radix-2) ────────────────────────────────
+
+def _fft_recursive(x):
+    """Cooley-Tukey radix-2 Decimation-In-Time FFT (recursive).
+    Input length MUST be a power of 2.
+    """
+    N = len(x)
+    if N <= 1:
+        return x
+
+    # Split into even / odd indices
+    even = _fft_recursive(x[0::2])
+    odd  = _fft_recursive(x[1::2])
+
+    # Twiddle factors  W_N^k = e^{-2πjk/N}
+    T = np.exp(-2j * np.pi * np.arange(N // 2) / N) * odd
+
+    return np.concatenate([even + T, even - T])
+
+
+def manual_fft(x):
+    """Compute the DFT of x using the Cooley-Tukey FFT algorithm.
+    Automatically zero-pads to the next power of 2.
+    """
+    N = len(x)
+    # Pad to next power of 2
+    n_padded = 1
+    while n_padded < N:
+        n_padded <<= 1
+
+    x_padded = np.zeros(n_padded, dtype=complex)
+    x_padded[:N] = x
+    return _fft_recursive(x_padded)
+
+
+def manual_ifft(X):
+    """Compute the inverse DFT using the FFT via the conjugate method:
+       ifft(X) = conj( fft( conj(X) ) ) / N
+    """
+    N = len(X)
+    # Pad to next power of 2 (should already be, but just in case)
+    n_padded = 1
+    while n_padded < N:
+        n_padded <<= 1
+
+    X_padded = np.zeros(n_padded, dtype=complex)
+    X_padded[:N] = X
+    return np.conjugate(_fft_recursive(np.conjugate(X_padded))) / n_padded
 
 class FFTSteganography:
     def __init__(self, frame_size=1024, freq_range=(100, 300), step=0.1):
@@ -60,7 +109,7 @@ class FFTSteganography:
             frame = audio[i * self.frame_size : (i + 1) * self.frame_size]
             
             # FFT
-            f_transform = fft(frame)
+            f_transform = manual_fft(frame)
             magnitudes = np.abs(f_transform)
             phases = np.angle(f_transform)
 
@@ -94,7 +143,7 @@ class FFTSteganography:
 
             # Reconstruct frame
             new_f_transform = magnitudes * np.exp(1j * phases)
-            stego_frame = np.real(ifft(new_f_transform))
+            stego_frame = np.real(manual_ifft(new_f_transform))
             stego_audio[i * self.frame_size : (i + 1) * self.frame_size] = stego_frame
 
         if bit_idx < total_bits:
@@ -128,7 +177,7 @@ class FFTSteganography:
 
         for i in range(num_frames):
             frame = audio[i * self.frame_size : (i + 1) * self.frame_size]
-            f_transform = fft(frame)
+            f_transform = manual_fft(frame)
             magnitudes = np.abs(f_transform)
 
             for freq in range(self.freq_range[0], self.freq_range[1]):
@@ -144,23 +193,3 @@ class FFTSteganography:
 
         return "Terminator not found. Extraction may be incomplete."
 
-if __name__ == "__main__":
-    # Quick test
-    import os
-    
-    # Create a dummy silent wav for testing if needed
-    fs = 44100
-    t = 2.0
-    samples = np.zeros(int(fs * t))
-    wavfile.write("test_init.wav", fs, (samples * 32767).astype(np.int16))
-    
-    engine = FFTSteganography()
-    msg = "Hello Stego World!"
-    engine.embed("test_init.wav", msg, "stego.wav")
-    extracted = engine.extract("stego.wav")
-    
-    print(f"Original: {msg}")
-    print(f"Extracted: {extracted}")
-    
-    if os.path.exists("test_init.wav"): os.remove("test_init.wav")
-    if os.path.exists("stego.wav"): os.remove("stego.wav")
